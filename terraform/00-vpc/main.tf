@@ -21,7 +21,7 @@ module "vpc" {
     "10.0.13.0/24"
   ]
 
-  enable_nat_gateway = false
+  enable_nat_gateway = true
 
   tags = {
     ManagedBy = "Terraform"
