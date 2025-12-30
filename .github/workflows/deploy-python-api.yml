@@ -11,7 +11,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: python-api
-  ECS_SERVICE: ecs-service
+  ECS_SERVICE: python-api-service
   ECS_CLUSTER: ecs-cluster
   ECS_TASK_DEFINITION: task-python-api
   CONTAINER_NAME: python-api
