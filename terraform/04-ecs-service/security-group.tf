@@ -1,12 +1,14 @@
 resource "aws_security_group" "ecs_tasks" {
-  name        = var.security_group_name
-  description = var.security_group_description
+  for_each = var.services
+
+  name        = each.value.security_group_name
+  description = "Security group for ECS tasks ${each.key} to allow traffic from ALB"
   vpc_id      = data.aws_vpc.this.id
 
   ingress {
-    description     = "Allow traffic from ALB on port ${var.security_group_port}"
-    from_port       = var.security_group_port
-    to_port         = var.security_group_port
+    description     = "Allow traffic from ALB on port ${each.value.container_port}"
+    from_port       = each.value.container_port
+    to_port         = each.value.container_port
     protocol        = "tcp"
     security_groups = [data.terraform_remote_state.alb.outputs.security_group_id]
   }
@@ -22,7 +24,8 @@ resource "aws_security_group" "ecs_tasks" {
   tags = merge(
     var.common_tags,
     {
-      Name = var.security_group_name
+      Name    = each.value.security_group_name
+      Service = each.key
     }
   )
 }

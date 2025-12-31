@@ -14,7 +14,13 @@ resource "aws_iam_role" "ecs_execution_role" {
     ]
   })
 
-  tags = var.common_tags
+  tags = merge(
+    var.common_tags,
+    {
+      Name    = var.execution_role_name
+      Purpose = "ECS Task Execution"
+    }
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_execution_role" {
