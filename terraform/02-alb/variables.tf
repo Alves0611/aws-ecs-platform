@@ -22,58 +22,26 @@ variable "alb_internal" {
   default     = false
 }
 
-variable "target_group_name" {
-  description = "Name of the target group"
+variable "base_domain" {
+  description = "Base domain name (e.g., gabrielstudying.click)"
   type        = string
-  default     = "python-api-tg"
+  default     = "gabrielstudying.click"
 }
 
-variable "target_group_port" {
-  description = "Port for the target group"
-  type        = number
-  default     = 8000
-}
-
-variable "target_group_protocol" {
-  description = "Protocol for the target group"
-  type        = string
-  default     = "HTTP"
-}
-
-variable "health_check_path" {
-  description = "Health check path"
-  type        = string
-  default     = "/healthz"
-}
-
-variable "health_check_healthy_threshold" {
-  description = "Number of consecutive successful health checks required"
-  type        = number
-  default     = 2
-}
-
-variable "health_check_unhealthy_threshold" {
-  description = "Number of consecutive failed health checks required"
-  type        = number
-  default     = 2
-}
-
-variable "health_check_timeout" {
-  description = "Health check timeout in seconds"
-  type        = number
-  default     = 5
-}
-
-variable "health_check_interval" {
-  description = "Health check interval in seconds"
-  type        = number
-  default     = 30
-}
-
-variable "health_check_matcher" {
-  description = "HTTP codes to use when checking for a successful response"
-  type        = string
-  default     = "200"
+variable "target_groups" {
+  description = "Map of target groups to create, key is the subdomain/service name"
+  type = map(object({
+    subdomain             = string
+    port                  = number
+    protocol              = optional(string, "HTTP")
+    health_check_path     = optional(string, "/healthz")
+    healthy_threshold     = optional(number, 2)
+    unhealthy_threshold   = optional(number, 2)
+    health_check_timeout  = optional(number, 5)
+    health_check_interval = optional(number, 30)
+    health_check_matcher  = optional(string, "200")
+  }))
+  default = {}
 }
 
 variable "listener_port" {
@@ -92,18 +60,6 @@ variable "ssl_policy" {
   description = "SSL policy for the ALB listener"
   type        = string
   default     = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-}
-
-variable "domain_name" {
-  description = "Domain name for the ACM certificate"
-  type        = string
-  default     = "gabrielstudying.click"
-}
-
-variable "certificate_name" {
-  description = "Name tag for the ACM certificate"
-  type        = string
-  default     = "studying-certificate"
 }
 
 variable "route53_zone_name" {
