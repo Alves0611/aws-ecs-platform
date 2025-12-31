@@ -10,12 +10,13 @@ on:
   workflow_dispatch:
     inputs:
       app:
-        description: "Application to deploy (python-api or react)"
+        description: "Application to deploy (python-api, react, or all)"
         required: true
         type: choice
         options:
           - python-api
           - react
+          - all
 
 env:
   AWS_REGION: us-east-1
@@ -26,18 +27,19 @@ permissions:
   contents: read
 
 jobs:
-  detect-changes:
-    name: Detect Changed Apps
+  set-vars:
+    name: Set Variables - Detect Changed Apps
     runs-on: ubuntu-latest
     outputs:
-      python-api: ${{ steps.filter.outputs.python-api }}
-      react: ${{ steps.filter.outputs.react }}
+      python-api: ${{ steps.set-outputs.outputs.python-api }}
+      react: ${{ steps.set-outputs.outputs.react }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check for changes in python-api
+      - name: Check for changes in files
         id: filter
+        if: github.event_name == 'push'
         uses: dorny/paths-filter@v2
         with:
           filters: |
@@ -46,99 +48,146 @@ jobs:
             react:
               - 'apps/react/**'
 
-  build-and-deploy:
-    name: Build and Deploy
-    runs-on: ubuntu-latest
-    needs: detect-changes
-    strategy:
-      matrix:
-        app: [python-api, react]
-        include:
-          - app: python-api
-            ecr_repository: python-api
-            ecs_service: python-api-service
-            ecs_task_definition: task-python-api
-            container_name: python-api
-            container_port: 8000
-            health_check_path: /healthz
-          - app: react
-            ecr_repository: react
-            ecs_service: react-service
-            ecs_task_definition: task-react
-            container_name: react
-            container_port: 80
-            health_check_path: /healthz
-
-    steps:
-      - name: Check if should deploy
-        id: should-deploy
-        env:
-          APP: ${{ matrix.app }}
-          PYTHON_API_CHANGED: ${{ needs.detect-changes.outputs.python-api }}
-          REACT_CHANGED: ${{ needs.detect-changes.outputs.react }}
+      - name: Set outputs based on event type
+        id: set-outputs
         run: |
-          if [ "$APP" == "python-api" ]; then
-            CHANGED="$PYTHON_API_CHANGED"
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual trigger - use input selection
+            SELECTED_APP="${{ github.event.inputs.app }}"
+            echo "Selected app: $SELECTED_APP"
+            
+            if [ "$SELECTED_APP" == "python-api" ]; then
+              echo "python-api=true" >> $GITHUB_OUTPUT
+              echo "react=false" >> $GITHUB_OUTPUT
+            elif [ "$SELECTED_APP" == "react" ]; then
+              echo "python-api=false" >> $GITHUB_OUTPUT
+              echo "react=true" >> $GITHUB_OUTPUT
+            elif [ "$SELECTED_APP" == "all" ]; then
+              echo "python-api=true" >> $GITHUB_OUTPUT
+              echo "react=true" >> $GITHUB_OUTPUT
+            else
+              echo "python-api=false" >> $GITHUB_OUTPUT
+              echo "react=false" >> $GITHUB_OUTPUT
+            fi
           else
-            CHANGED="$REACT_CHANGED"
+            # Push event - use path filter results (defaults to false if filter didn't run)
+            PYTHON_CHANGED="${{ steps.filter.outputs.python-api }}"
+            REACT_CHANGED="${{ steps.filter.outputs.react }}"
+            
+            # Normalize to true/false string
+            if [ "$PYTHON_CHANGED" == "true" ]; then
+              echo "python-api=true" >> $GITHUB_OUTPUT
+            else
+              echo "python-api=false" >> $GITHUB_OUTPUT
+            fi
+            
+            if [ "$REACT_CHANGED" == "true" ]; then
+              echo "react=true" >> $GITHUB_OUTPUT
+            else
+              echo "react=false" >> $GITHUB_OUTPUT
+            fi
           fi
 
-          if [ "$CHANGED" == "true" ] || \
-             ([ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.app }}" == "$APP" ]); then
-            echo "should_deploy=true" >> $GITHUB_OUTPUT
-          else
-            echo "should_deploy=false" >> $GITHUB_OUTPUT
-          fi
-
+  deploy-python-api:
+    name: Build and Deploy Python API
+    runs-on: ubuntu-latest
+    needs: set-vars
+    if: needs.set-vars.outputs.python-api == 'true'
+    steps:
       - name: Checkout code
-        if: steps.should-deploy.outputs.should_deploy == 'true'
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        if: steps.should-deploy.outputs.should_deploy == 'true'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to Amazon ECR
-        if: steps.should-deploy.outputs.should_deploy == 'true'
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image to Amazon ECR
-        if: steps.should-deploy.outputs.should_deploy == 'true'
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          cd apps/${{ matrix.app }}
-          docker build --platform linux/amd64 -t $ECR_REGISTRY/${{ matrix.ecr_repository }}:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/${{ matrix.ecr_repository }}:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/${{ matrix.ecr_repository }}:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          cd apps/python-api
+          docker build --platform linux/amd64 -t $ECR_REGISTRY/python-api:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/python-api:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/python-api:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Download task definition
-        if: steps.should-deploy.outputs.should_deploy == 'true'
         run: |
           aws ecs describe-task-definition \
-            --task-definition ${{ matrix.ecs_task_definition }} \
+            --task-definition task-python-api \
             --query taskDefinition > task-definition.json
 
       - name: Fill in the new image ID in the Amazon ECS task definition
-        if: steps.should-deploy.outputs.should_deploy == 'true'
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
-          container-name: ${{ matrix.container_name }}
+          container-name: python-api
           image: ${{ steps.build-image.outputs.image }}
 
       - name: Deploy Amazon ECS task definition
-        if: steps.should-deploy.outputs.should_deploy == 'true'
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: ${{ matrix.ecs_service }}
+          service: python-api-service
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+  deploy-react:
+    name: Build and Deploy React
+    runs-on: ubuntu-latest
+    needs: set-vars
+    if: needs.set-vars.outputs.react == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd apps/react
+          docker build --platform linux/amd64 -t $ECR_REGISTRY/react:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/react:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/react:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition task-react \
+            --query taskDefinition > task-definition.json
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: react
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: react-service
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
