@@ -1,7 +1,9 @@
-resource "aws_route53_record" "alb" {
+resource "aws_route53_record" "alb_subdomains" {
+  for_each = var.target_groups
+
   provider = aws.root_account
   zone_id  = data.aws_route53_zone.this.zone_id
-  name     = var.domain_name
+  name     = "${each.value.subdomain}.${var.base_domain}"
   type     = "A"
 
   alias {
@@ -10,4 +12,3 @@ resource "aws_route53_record" "alb" {
     evaluate_target_health = true
   }
 }
-
