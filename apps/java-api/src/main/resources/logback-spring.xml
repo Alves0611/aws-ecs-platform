@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    
+    <!-- JSON Appender for structured logging -->
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <timeZone>UTC</timeZone>
+                    <fieldName>timestamp</fieldName>
+                </timestamp>
+                <version/>
+                <logLevel>
+                    <fieldName>level</fieldName>
+                </logLevel>
+                <mdc/>
+                <pattern>
+                    <pattern>
+                        {
+                            "service": "java-api",
+                            "name": "%logger{36}",
+                            "message": "%message"
+                        }
+                    </pattern>
+                </pattern>
+                <stackTrace>
+                    <fieldName>stacktrace</fieldName>
+                </stackTrace>
+            </providers>
+        </encoder>
+    </appender>
+    
+    <root level="INFO">
+        <appender-ref ref="JSON" />
+    </root>
+</configuration>
+
