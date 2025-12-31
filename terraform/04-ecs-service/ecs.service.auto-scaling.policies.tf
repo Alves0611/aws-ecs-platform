@@ -1,17 +1,24 @@
 resource "aws_appautoscaling_target" "ecs" {
-  max_capacity       = var.autoscaling_max_capacity
-  min_capacity       = var.autoscaling_min_capacity
-  resource_id        = "service/${data.terraform_remote_state.ecs_cluster.outputs.cluster_name}/${aws_ecs_service.this.name}"
+  for_each = {
+    for k, v in var.services : k => v
+    if v.autoscaling_enabled
+  }
+
+  max_capacity       = each.value.autoscaling_max_capacity
+  min_capacity       = each.value.autoscaling_min_capacity
+  resource_id        = "service/${data.terraform_remote_state.ecs_cluster.outputs.cluster_name}/${aws_ecs_service.this[each.key].name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
 
 resource "aws_appautoscaling_policy" "scale_down" {
-  name               = "${var.autoscaling_policy_name_prefix}scale-down"
+  for_each = aws_appautoscaling_target.ecs
+
+  name               = "${each.key}-scale-down"
   policy_type        = "StepScaling"
-  resource_id        = aws_appautoscaling_target.ecs.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
+  resource_id        = each.value.resource_id
+  scalable_dimension = each.value.scalable_dimension
+  service_namespace  = each.value.service_namespace
 
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
@@ -25,13 +32,14 @@ resource "aws_appautoscaling_policy" "scale_down" {
   }
 }
 
-
 resource "aws_appautoscaling_policy" "scale_up" {
-  name               = "${var.autoscaling_policy_name_prefix}scale-up"
+  for_each = aws_appautoscaling_target.ecs
+
+  name               = "${each.key}-scale-up"
   policy_type        = "StepScaling"
-  resource_id        = aws_appautoscaling_target.ecs.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
+  resource_id        = each.value.resource_id
+  scalable_dimension = each.value.scalable_dimension
+  service_namespace  = each.value.service_namespace
 
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
