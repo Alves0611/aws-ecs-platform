@@ -11,6 +11,12 @@ target_groups = {
     protocol          = "HTTP"
     health_check_path = "/healthz"
   }
+  "java-api" = {
+    subdomain         = "api-java"
+    port              = 8000
+    protocol          = "HTTP"
+    health_check_path = "/healthz"
+  }
 }
 
 base_domain       = "gabrielstudying.click"

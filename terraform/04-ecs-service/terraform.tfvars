@@ -39,6 +39,25 @@ services = {
     autoscaling_scale_up_threshold   = 60
     autoscaling_scale_down_threshold = 55
   }
+  "java-api" = {
+    service_name                     = "java-api-service"
+    desired_count                    = 1
+    task_family                      = "task-java-api"
+    task_cpu                         = 512
+    task_memory                      = 1024
+    container_name                   = "java-api"
+    container_image                  = "444065722670.dkr.ecr.us-east-1.amazonaws.com/java-api:latest"
+    container_port                   = 8000
+    assign_public_ip                 = false
+    cloudwatch_log_group             = "/aws/studying-cluster/java-api/log-group"
+    security_group_name              = "ecs-java-api-sg"
+    target_group_arn                 = null
+    autoscaling_enabled              = true
+    autoscaling_min_capacity         = 1
+    autoscaling_max_capacity         = 4
+    autoscaling_scale_up_threshold   = 60
+    autoscaling_scale_down_threshold = 55
+  }
 }
 
 common_tags = {
