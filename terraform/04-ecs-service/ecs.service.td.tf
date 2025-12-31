@@ -1,29 +1,31 @@
 resource "aws_ecs_task_definition" "this" {
-  family                   = var.task_family
+  for_each = var.services
+
+  family                   = each.value.task_family
   requires_compatibilities = [var.capacity_provider]
   network_mode             = "awsvpc"
-  cpu                      = var.task_cpu
-  memory                   = var.task_memory
+  cpu                      = each.value.task_cpu
+  memory                   = each.value.task_memory
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   container_definitions    = <<TASK_DEFINITION
 [
   {
-    "name": "${var.container_name}",
-    "image": "${var.container_image}",
-    "cpu": ${var.task_cpu},
-    "memory": ${var.task_memory},
+    "name": "${each.value.container_name}",
+    "image": "${each.value.container_image}",
+    "cpu": ${each.value.task_cpu},
+    "memory": ${each.value.task_memory},
     "essential": true,
     "portMappings": [
         {
-          "containerPort": ${var.container_port},
-          "hostPort": ${var.container_port},
+          "containerPort": ${each.value.container_port},
+          "hostPort": ${each.value.container_port},
           "protocol": "tcp"
         }
     ],
     "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-            "awslogs-group": "${var.cloudwatch_log_group}",
+            "awslogs-group": "${each.value.cloudwatch_log_group}",
             "awslogs-region": "${var.region}",
             "awslogs-create-group": "true",
             "awslogs-stream-prefix": "${var.cloudwatch_log_stream_prefix}"
@@ -33,5 +35,11 @@ resource "aws_ecs_task_definition" "this" {
 ]
 TASK_DEFINITION
 
-  tags = var.common_tags
+  tags = merge(
+    var.common_tags,
+    {
+      Name    = each.value.task_family
+      Service = each.key
+    }
+  )
 }
