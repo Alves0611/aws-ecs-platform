@@ -125,3 +125,75 @@ variable "common_tags" {
     ManagedBy = "Terraform"
   }
 }
+
+variable "autoscaling_min_capacity" {
+  description = "Minimum number of tasks for auto-scaling"
+  type        = number
+  default     = 1
+}
+
+variable "autoscaling_max_capacity" {
+  description = "Maximum number of tasks for auto-scaling"
+  type        = number
+  default     = 4
+}
+
+variable "autoscaling_scale_up_threshold" {
+  description = "CPU utilization threshold to trigger scale up"
+  type        = number
+  default     = 60
+}
+
+variable "autoscaling_scale_down_threshold" {
+  description = "CPU utilization threshold to trigger scale down"
+  type        = number
+  default     = 55
+}
+
+variable "autoscaling_scale_up_evaluation_periods" {
+  description = "Number of evaluation periods for scale up alarm"
+  type        = number
+  default     = 2
+}
+
+variable "autoscaling_scale_down_evaluation_periods" {
+  description = "Number of evaluation periods for scale down alarm"
+  type        = number
+  default     = 3
+}
+
+variable "autoscaling_metric_period" {
+  description = "Period in seconds for metric evaluation"
+  type        = number
+  default     = 30
+}
+
+variable "autoscaling_cooldown" {
+  description = "Cooldown period in seconds between scaling actions"
+  type        = number
+  default     = 60
+}
+
+variable "autoscaling_scale_up_adjustment" {
+  description = "Number of tasks to add when scaling up"
+  type        = number
+  default     = 1
+}
+
+variable "autoscaling_scale_down_adjustment" {
+  description = "Number of tasks to remove when scaling down"
+  type        = number
+  default     = -1
+}
+
+variable "autoscaling_policy_name_prefix" {
+  description = "Prefix for auto-scaling policy names"
+  type        = string
+  default     = ""
+}
+
+variable "autoscaling_alarm_name_prefix" {
+  description = "Prefix for auto-scaling alarm names"
+  type        = string
+  default     = ""
+}
