@@ -5,5 +5,11 @@ repositories = {
     encryption_type      = "AES256"
     lifecycle_policy     = ""
   }
+  "react" = {
+    image_tag_mutability = "MUTABLE"
+    scan_on_push         = true
+    encryption_type      = "AES256"
+    lifecycle_policy     = ""
+  }
 }
 

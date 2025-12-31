@@ -1,0 +1,349 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  width: 100%;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 3rem 0;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  font-weight: 300;
+  opacity: 0.95;
+}
+
+/* Main */
+.main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+/* Hero Section */
+.hero {
+  background: var(--bg-accent);
+  padding: 4rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.hero-description {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+/* Sections */
+.expertise,
+.values {
+  padding: 4rem 0;
+}
+
+.expertise {
+  background: var(--bg-primary);
+}
+
+.values {
+  background: var(--bg-secondary);
+}
+
+.section-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+/* Expertise Grid */
+.expertise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.expertise-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid var(--border-color);
+}
+
+.expertise-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.card-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.expertise-card h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.expertise-card p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+/* Values */
+.values-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.value-item {
+  background: white;
+  padding: 1.5rem 2rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  border-left: 4px solid var(--primary-color);
+}
+
+.value-item strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* POC Info Section */
+.poc-info {
+  padding: 0;
+  width: 100%;
+}
+
+.poc-info::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+}
+
+.poc-banner {
+  background: linear-gradient(135deg, rgba(255, 247, 237, 0.8) 0%, rgba(255, 251, 235, 0.9) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 3rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 2.5rem;
+  max-width: 950px;
+  margin: 0 auto;
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.08),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.poc-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 25px 30px -5px rgba(0, 0, 0, 0.12),
+    0 15px 15px -5px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.poc-icon {
+  font-size: 4rem;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 10px 15px -3px rgba(251, 191, 36, 0.3),
+    0 4px 6px -2px rgba(251, 191, 36, 0.2);
+  position: relative;
+}
+
+.poc-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.poc-content {
+  flex: 1;
+  padding-top: 0.5rem;
+}
+
+.poc-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #92400e 0%, #78350f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.poc-description {
+  font-size: 1.0625rem;
+  line-height: 1.9;
+  color: #57534e;
+  margin-bottom: 1.25rem;
+  font-weight: 400;
+}
+
+.poc-description:last-child {
+  margin-bottom: 0;
+}
+
+.poc-description strong {
+  color: #78350f;
+  font-weight: 600;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1));
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+}
+
+/* Footer */
+.footer {
+  background: var(--text-primary);
+  color: white;
+  padding: 2rem 0;
+  text-align: center;
+  margin-top: auto;
+}
+
+.footer p {
+  margin: 0.5rem 0;
+  opacity: 0.9;
+}
+
+.footer-note {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-description {
+    font-size: 1.1rem;
+  }
+
+  .expertise-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+  }
+
+  .expertise,
+  .values,
+  .hero,
+  .poc-info {
+    padding: 3rem 0;
+  }
+
+  .poc-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 2.5rem 1.75rem;
+    gap: 2rem;
+    border-radius: 20px;
+  }
+
+  .poc-icon {
+    font-size: 3rem;
+    width: 70px;
+    height: 70px;
+    border-radius: 18px;
+    margin: 0 auto;
+  }
+
+  .poc-title {
+    font-size: 1.625rem;
+  }
+
+  .poc-description {
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+}
