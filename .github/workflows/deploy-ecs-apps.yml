@@ -10,12 +10,13 @@ on:
   workflow_dispatch:
     inputs:
       app:
-        description: "Application to deploy (python-api or react)"
+        description: "Application to deploy (python-api, react, or all)"
         required: true
         type: choice
         options:
           - python-api
           - react
+          - all
 
 env:
   AWS_REGION: us-east-1
@@ -30,14 +31,15 @@ jobs:
     name: Detect Changed Apps
     runs-on: ubuntu-latest
     outputs:
-      python-api: ${{ steps.filter.outputs.python-api }}
-      react: ${{ steps.filter.outputs.react }}
+      python-api: ${{ steps.set-outputs.outputs.python-api }}
+      react: ${{ steps.set-outputs.outputs.react }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check for changes in python-api
+      - name: Check for changes in files
         id: filter
+        if: github.event_name == 'push'
         uses: dorny/paths-filter@v2
         with:
           filters: |
@@ -45,6 +47,32 @@ jobs:
               - 'apps/python-api/**'
             react:
               - 'apps/react/**'
+
+      - name: Set outputs based on event type
+        id: set-outputs
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Manual trigger - use input selection
+            SELECTED_APP="${{ github.event.inputs.app }}"
+            
+            if [ "$SELECTED_APP" == "python-api" ]; then
+              echo "python-api=true" >> $GITHUB_OUTPUT
+              echo "react=false" >> $GITHUB_OUTPUT
+            elif [ "$SELECTED_APP" == "react" ]; then
+              echo "python-api=false" >> $GITHUB_OUTPUT
+              echo "react=true" >> $GITHUB_OUTPUT
+            elif [ "$SELECTED_APP" == "all" ]; then
+              echo "python-api=true" >> $GITHUB_OUTPUT
+              echo "react=true" >> $GITHUB_OUTPUT
+            else
+              echo "python-api=false" >> $GITHUB_OUTPUT
+              echo "react=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            # Push event - use path filter results
+            echo "python-api=${{ steps.filter.outputs.python-api }}" >> $GITHUB_OUTPUT
+            echo "react=${{ steps.filter.outputs.react }}" >> $GITHUB_OUTPUT
+          fi
 
   build-and-deploy:
     name: Build and Deploy
@@ -83,8 +111,7 @@ jobs:
             CHANGED="$REACT_CHANGED"
           fi
 
-          if [ "$CHANGED" == "true" ] || \
-             ([ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ github.event.inputs.app }}" == "$APP" ]); then
+          if [ "$CHANGED" == "true" ]; then
             echo "should_deploy=true" >> $GITHUB_OUTPUT
           else
             echo "should_deploy=false" >> $GITHUB_OUTPUT
