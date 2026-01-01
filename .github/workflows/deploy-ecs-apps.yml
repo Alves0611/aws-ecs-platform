@@ -114,6 +114,9 @@ jobs:
     needs: set-vars
     if: needs.set-vars.outputs.python-api == 'true'
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
@@ -131,6 +134,9 @@ jobs:
     needs: set-vars
     if: needs.set-vars.outputs.react == 'true'
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
@@ -148,6 +154,9 @@ jobs:
     needs: set-vars
     if: needs.set-vars.outputs.java-api == 'true'
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
