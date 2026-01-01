@@ -117,6 +117,55 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        id: build-image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/python-api
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/python-api:${{ github.sha }}
+          cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/python-api:buildcache
+          cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/python-api:buildcache,mode=max
+
+      - name: Trivy Security Scan
+        uses: ./.github/actions/trivy-scan-image
+        continue-on-error: true
+        with:
+          image: ${{ steps.login-ecr.outputs.registry }}/python-api:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          format: table
+          fail-on-severity: CRITICAL
+          aws-region: ${{ env.AWS_REGION }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Get image URI with digest
+        id: image-uri
+        shell: bash
+        run: |
+          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/python-api:${{ github.sha }}"
+          DIGEST="${{ steps.build-image.outputs.digest }}"
+          if [ -n "$DIGEST" ]; then
+            IMAGE_URI_WITH_DIGEST="${{ steps.login-ecr.outputs.registry }}/python-api@${DIGEST}"
+          else
+            IMAGE_URI_WITH_DIGEST="$IMAGE_URI"
+          fi
+          echo "image-uri=$IMAGE_URI_WITH_DIGEST" >> $GITHUB_OUTPUT
+
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
@@ -125,6 +174,7 @@ jobs:
           task-definition: task-python-api
           service-name: python-api-service
           container-name: python-api
+          image-uri: ${{ steps.image-uri.outputs.image-uri }}
           aws-region: ${{ env.AWS_REGION }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
           aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
@@ -138,6 +188,55 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        id: build-image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/react
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/react:${{ github.sha }}
+          cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/react:buildcache
+          cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/react:buildcache,mode=max
+
+      - name: Trivy Security Scan
+        uses: ./.github/actions/trivy-scan-image
+        continue-on-error: true
+        with:
+          image: ${{ steps.login-ecr.outputs.registry }}/react:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          format: table
+          fail-on-severity: CRITICAL
+          aws-region: ${{ env.AWS_REGION }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Get image URI with digest
+        id: image-uri
+        shell: bash
+        run: |
+          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/react:${{ github.sha }}"
+          DIGEST="${{ steps.build-image.outputs.digest }}"
+          if [ -n "$DIGEST" ]; then
+            IMAGE_URI_WITH_DIGEST="${{ steps.login-ecr.outputs.registry }}/react@${DIGEST}"
+          else
+            IMAGE_URI_WITH_DIGEST="$IMAGE_URI"
+          fi
+          echo "image-uri=$IMAGE_URI_WITH_DIGEST" >> $GITHUB_OUTPUT
+
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
@@ -146,6 +245,7 @@ jobs:
           task-definition: task-react
           service-name: react-service
           container-name: react
+          image-uri: ${{ steps.image-uri.outputs.image-uri }}
           aws-region: ${{ env.AWS_REGION }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
           aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
@@ -159,6 +259,55 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        id: build-image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/java-api
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/java-api:${{ github.sha }}
+          cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/java-api:buildcache
+          cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/java-api:buildcache,mode=max
+
+      - name: Trivy Security Scan
+        uses: ./.github/actions/trivy-scan-image
+        continue-on-error: true
+        with:
+          image: ${{ steps.login-ecr.outputs.registry }}/java-api:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          format: table
+          fail-on-severity: CRITICAL
+          aws-region: ${{ env.AWS_REGION }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Get image URI with digest
+        id: image-uri
+        shell: bash
+        run: |
+          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/java-api:${{ github.sha }}"
+          DIGEST="${{ steps.build-image.outputs.digest }}"
+          if [ -n "$DIGEST" ]; then
+            IMAGE_URI_WITH_DIGEST="${{ steps.login-ecr.outputs.registry }}/java-api@${DIGEST}"
+          else
+            IMAGE_URI_WITH_DIGEST="$IMAGE_URI"
+          fi
+          echo "image-uri=$IMAGE_URI_WITH_DIGEST" >> $GITHUB_OUTPUT
+
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
@@ -167,6 +316,7 @@ jobs:
           task-definition: task-java-api
           service-name: java-api-service
           container-name: java-api
+          image-uri: ${{ steps.image-uri.outputs.image-uri }}
           aws-region: ${{ env.AWS_REGION }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
           aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
