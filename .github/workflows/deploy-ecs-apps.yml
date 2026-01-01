@@ -151,10 +151,4 @@ jobs:
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
-          app-name: java-api
-          ecr-repository: java-api
-          task-definition: task-java-api
-          service-name: java-api-service
-          container-name: java-api
-          aws-region: ${{ env.AWS_REGION }}
-          ecs-cluster: ${{ env.ECS_CLUSTER }}
+
