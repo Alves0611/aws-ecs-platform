@@ -114,6 +114,9 @@ jobs:
     needs: set-vars
     if: needs.set-vars.outputs.python-api == 'true'
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
@@ -124,6 +127,7 @@ jobs:
           container-name: python-api
           aws-region: ${{ env.AWS_REGION }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
 
   deploy-react:
     name: Build and Deploy React
@@ -131,6 +135,9 @@ jobs:
     needs: set-vars
     if: needs.set-vars.outputs.react == 'true'
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
@@ -141,6 +148,7 @@ jobs:
           container-name: react
           aws-region: ${{ env.AWS_REGION }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
 
   deploy-java-api:
     name: Build and Deploy Java API
@@ -148,6 +156,9 @@ jobs:
     needs: set-vars
     if: needs.set-vars.outputs.java-api == 'true'
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Deploy to ECS
         uses: ./.github/actions/deploy-ecs-app
         with:
@@ -158,3 +169,4 @@ jobs:
           container-name: java-api
           aws-region: ${{ env.AWS_REGION }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
