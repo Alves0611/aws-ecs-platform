@@ -28,6 +28,10 @@ inputs:
     description: "Unique name for the artifact (defaults to trivy-scan-report)"
     required: false
     default: "trivy-scan-report"
+  app-name:
+    description: "Application name for display in summary (e.g., Python API, React, Java API)"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -73,20 +77,17 @@ runs:
       id: summary
       shell: bash
       run: |
-        echo "## 🔍 Trivy Security Scan" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Image:** \`${{ inputs.image }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "**Severity:** ${{ inputs.severity }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-
-        if [ -f "trivy-report.table" ]; then
-          echo "### Scan Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat trivy-report.table >> $GITHUB_STEP_SUMMARY || true
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+        APP_NAME="${{ inputs.app-name }}"
+        if [ -z "$APP_NAME" ]; then
+          # Extract app name from image if not provided
+          IMAGE_NAME="${{ inputs.image }}"
+          REPO_NAME=$(echo "$IMAGE_NAME" | sed 's|.*/||' | cut -d: -f1 | cut -d@ -f1)
+          # Convert repo name to display name (e.g., python-api -> Python API)
+          APP_NAME=$(echo "$REPO_NAME" | sed 's/-/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1')
         fi
+
+        echo "## 🔍 Trivy Security Scan - $APP_NAME" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
 
         if [ -f "trivy-report.json" ]; then
           # Extract vulnerability counts
@@ -95,7 +96,7 @@ runs:
           MEDIUM=$(jq -r '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length' trivy-report.json 2>/dev/null || echo "0")
           TOTAL=$((CRITICAL + HIGH + MEDIUM))
           
-          echo "### 📊 Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 $APP_NAME Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
