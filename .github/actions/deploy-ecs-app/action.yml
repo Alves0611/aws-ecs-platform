@@ -1,5 +1,5 @@
 name: "Deploy ECS App"
-description: "Build Docker image, push to ECR, and deploy to ECS"
+description: "Deploy Docker image to ECS service"
 
 inputs:
   app-name:
@@ -28,6 +28,9 @@ inputs:
   aws-role-arn:
     description: "AWS IAM role ARN to assume"
     required: true
+  image-uri:
+    description: "Full Docker image URI (registry/repo:tag or registry/repo@digest)"
+    required: true
 
 runs:
   using: "composite"
@@ -42,37 +45,26 @@ runs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
-      uses: docker/build-push-action@v5
-      with:
-        context: ./apps/${{ inputs.app-name }}
-        platforms: linux/amd64
-        push: true
-        tags: |
-          ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
-        cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:buildcache
-        cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:buildcache,mode=max
-
-    - name: Set image outputs
-      id: image-outputs
+    - name: Get image digest
+      id: image-info
       shell: bash
       run: |
-        IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}"
-        # Extract digest from build-image output (format: sha256:abc123...)
-        DIGEST="${{ steps.build-image.outputs.digest }}"
-        # Create image URI with digest for immutable reference
-        if [ -n "$DIGEST" ]; then
-          IMAGE_URI_WITH_DIGEST="${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}@${DIGEST}"
-        else
+        IMAGE_URI="${{ inputs.image-uri }}"
+        # If image URI includes digest, use it; otherwise use tag
+        if [[ "$IMAGE_URI" == *"@sha256:"* ]]; then
           IMAGE_URI_WITH_DIGEST="$IMAGE_URI"
+        else
+          # Try to get digest from ECR
+          REPO_NAME=$(echo "$IMAGE_URI" | sed 's|.*/||' | cut -d: -f1)
+          TAG=$(echo "$IMAGE_URI" | sed 's|.*:||')
+          DIGEST=$(aws ecr describe-images --repository-name "$REPO_NAME" --image-ids imageTag="$TAG" --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || echo "")
+          if [ -n "$DIGEST" ]; then
+            IMAGE_URI_WITH_DIGEST="${IMAGE_URI%%:*}:${IMAGE_URI##*/}@${DIGEST}"
+          else
+            IMAGE_URI_WITH_DIGEST="$IMAGE_URI"
+          fi
         fi
-        echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
         echo "image-with-digest=$IMAGE_URI_WITH_DIGEST" >> $GITHUB_OUTPUT
-        echo "digest=$DIGEST" >> $GITHUB_OUTPUT
 
     - name: Download task definition
       shell: bash
@@ -87,7 +79,7 @@ runs:
       with:
         task-definition: task-definition.json
         container-name: ${{ inputs.container-name }}
-        image: ${{ steps.image-outputs.outputs.image-with-digest }}
+        image: ${{ steps.image-info.outputs.image-with-digest }}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
