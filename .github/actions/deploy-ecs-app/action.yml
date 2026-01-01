@@ -42,18 +42,37 @@ runs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
+      uses: docker/build-push-action@v5
+      with:
+        context: ./apps/${{ inputs.app-name }}
+        platforms: linux/amd64
+        push: true
+        tags: |
+          ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}
+        cache-from: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:buildcache
+        cache-to: type=registry,ref=${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:buildcache,mode=max
+
+    - name: Set image outputs
+      id: image-outputs
       shell: bash
       run: |
-        cd apps/${{ inputs.app-name }}
-        IMAGE_URI="$ECR_REGISTRY/${{ inputs.ecr-repository }}:$IMAGE_TAG"
-        docker build --platform linux/amd64 -t $IMAGE_URI .
-        docker push $IMAGE_URI
+        IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}:${{ github.sha }}"
+        # Extract digest from build-image output (format: sha256:abc123...)
+        DIGEST="${{ steps.build-image.outputs.digest }}"
+        # Create image URI with digest for immutable reference
+        if [ -n "$DIGEST" ]; then
+          IMAGE_URI_WITH_DIGEST="${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}@${DIGEST}"
+        else
+          IMAGE_URI_WITH_DIGEST="$IMAGE_URI"
+        fi
         echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
+        echo "image-with-digest=$IMAGE_URI_WITH_DIGEST" >> $GITHUB_OUTPUT
+        echo "digest=$DIGEST" >> $GITHUB_OUTPUT
 
     - name: Download task definition
       shell: bash
@@ -68,7 +87,7 @@ runs:
       with:
         task-definition: task-definition.json
         container-name: ${{ inputs.container-name }}
-        image: ${{ steps.build-image.outputs.image }}
+        image: ${{ steps.image-outputs.outputs.image-with-digest }}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
