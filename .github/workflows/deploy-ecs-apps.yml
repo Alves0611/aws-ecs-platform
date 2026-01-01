@@ -114,51 +114,16 @@ jobs:
     needs: set-vars
     if: needs.set-vars.outputs.python-api == 'true'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to ECS
+        uses: ./.github/actions/deploy-ecs-app
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          cd apps/python-api
-          docker build --platform linux/amd64 -t $ECR_REGISTRY/python-api:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/python-api:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/python-api:$IMAGE_TAG" >> $GITHUB_OUTPUT
-
-      - name: Download task definition
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition task-python-api \
-            --query taskDefinition > task-definition.json
-
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
+          app-name: python-api
+          ecr-repository: python-api
+          task-definition: task-python-api
+          service-name: python-api-service
           container-name: python-api
-          image: ${{ steps.build-image.outputs.image }}
-
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: python-api-service
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+          aws-region: ${{ env.AWS_REGION }}
+          ecs-cluster: ${{ env.ECS_CLUSTER }}
 
   deploy-react:
     name: Build and Deploy React
@@ -166,51 +131,16 @@ jobs:
     needs: set-vars
     if: needs.set-vars.outputs.react == 'true'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to ECS
+        uses: ./.github/actions/deploy-ecs-app
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          cd apps/react
-          docker build --platform linux/amd64 -t $ECR_REGISTRY/react:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/react:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/react:$IMAGE_TAG" >> $GITHUB_OUTPUT
-
-      - name: Download task definition
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition task-react \
-            --query taskDefinition > task-definition.json
-
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
+          app-name: react
+          ecr-repository: react
+          task-definition: task-react
+          service-name: react-service
           container-name: react
-          image: ${{ steps.build-image.outputs.image }}
-
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: react-service
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
+          aws-region: ${{ env.AWS_REGION }}
+          ecs-cluster: ${{ env.ECS_CLUSTER }}
 
   deploy-java-api:
     name: Build and Deploy Java API
@@ -218,48 +148,7 @@ jobs:
     needs: set-vars
     if: needs.set-vars.outputs.java-api == 'true'
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to ECS
+        uses: ./.github/actions/deploy-ecs-app
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push image to Amazon ECR
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          cd apps/java-api
-          docker build --platform linux/amd64 -t $ECR_REGISTRY/java-api:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/java-api:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/java-api:$IMAGE_TAG" >> $GITHUB_OUTPUT
-
-      - name: Download task definition
-        run: |
-          aws ecs describe-task-definition \
-            --task-definition task-java-api \
-            --query taskDefinition > task-definition.json
-
-      - name: Fill in the new image ID in the Amazon ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          container-name: java-api
-          image: ${{ steps.build-image.outputs.image }}
-
-      - name: Deploy Amazon ECS task definition
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: java-api-service
-          cluster: ${{ env.ECS_CLUSTER }}
-          wait-for-service-stability: true
