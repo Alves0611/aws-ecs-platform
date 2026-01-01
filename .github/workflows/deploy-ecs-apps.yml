@@ -127,6 +127,7 @@ jobs:
           container-name: python-api
           aws-region: ${{ env.AWS_REGION }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
 
   deploy-react:
     name: Build and Deploy React
@@ -147,6 +148,7 @@ jobs:
           container-name: react
           aws-region: ${{ env.AWS_REGION }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
 
   deploy-java-api:
     name: Build and Deploy Java API
@@ -167,3 +169,4 @@ jobs:
           container-name: java-api
           aws-region: ${{ env.AWS_REGION }}
           ecs-cluster: ${{ env.ECS_CLUSTER }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
