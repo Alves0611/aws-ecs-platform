@@ -147,6 +147,7 @@ jobs:
         continue-on-error: true
         with:
           image: ${{ steps.login-ecr.outputs.registry }}/python-api:${{ github.sha }}
+          artifact-name: trivy-scan-report-python-api
           severity: CRITICAL,HIGH
           format: table
           fail-on-severity: CRITICAL
@@ -218,6 +219,7 @@ jobs:
         continue-on-error: true
         with:
           image: ${{ steps.login-ecr.outputs.registry }}/react:${{ github.sha }}
+          artifact-name: trivy-scan-report-react
           severity: CRITICAL,HIGH
           format: table
           fail-on-severity: CRITICAL
@@ -289,6 +291,7 @@ jobs:
         continue-on-error: true
         with:
           image: ${{ steps.login-ecr.outputs.registry }}/java-api:${{ github.sha }}
+          artifact-name: trivy-scan-report-java-api
           severity: CRITICAL,HIGH
           format: table
           fail-on-severity: CRITICAL
