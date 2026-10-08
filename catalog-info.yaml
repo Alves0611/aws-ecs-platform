@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: aws-ecs-platform
+  title: Plataforma ECS na AWS
+  description: Microsserviços em contêineres no ECS Fargate, com IaC em Terraform, CI/CD e observabilidade.
+  annotations:
+    github.com/project-slug: Alves0611/aws-ecs-platform
+  tags:
+    - terraform
+    - ecs
+    - aws
+spec:
+  type: iac-module
+  lifecycle: experimental
+  owner: user:alves0611
+  system: ecs-platform
